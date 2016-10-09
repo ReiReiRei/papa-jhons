@@ -20,13 +20,13 @@ class Pizzeria {
   val queue = mutable.PriorityQueue.empty[Customer](serveStrategy)
 
   def serve(currentTime: Long): Long = {
-    val serveTime = try {
+    val serveTime = if (queue.nonEmpty) {
       val servingCustomer = queue.dequeue()
       val servedCustomer = servingCustomer.copy(out = currentTime + servingCustomer.pizzaTime)
       served += servedCustomer
       servingCustomer.pizzaTime
-    } catch {
-      case e: NoSuchElementException => 0
+    } else {
+      0
     }
     serveTime
   }
@@ -44,7 +44,7 @@ class PizzeriaWorkingDay(schedule: List[Customer], val pizzeria: Pizzeria) {
   private var time = 0L
 
   private def addCustomersToQueue() = {
-    while (!willCome.isEmpty && time >= willCome.head.in) {
+    while (willCome.nonEmpty && time >= willCome.head.in) {
       pizzeria.addCustomer(willCome.head)
       willCome = willCome.tail
     }
@@ -54,14 +54,14 @@ class PizzeriaWorkingDay(schedule: List[Customer], val pizzeria: Pizzeria) {
     addCustomersToQueue()
     val serveTime = pizzeria.serve(time)
     if (serveTime == 0) time += 1 else time += serveTime
-    if (!willCome.isEmpty || !pizzeria.queue.isEmpty) tictac() else false
+    if (willCome.nonEmpty || pizzeria.queue.nonEmpty) tictac() else false
   }
 
   tictac()
 
   def averageWaitingTime = {
     val spentTime = pizzeria.served.foldLeft((0L, 0L))((acum, customer) => (acum._1 + (customer.out - customer.in), acum._2 + 1))
-    val averageWaiting = if (spentTime._2 == 0) 0 else (spentTime._1 / spentTime._2)
+    val averageWaiting = if (spentTime._2 == 0) 0 else spentTime._1 / spentTime._2
     averageWaiting
   }
 
